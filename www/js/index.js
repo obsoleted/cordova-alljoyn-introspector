@@ -77,9 +77,9 @@ var app = {
         app.bus.addInterfacesListener([], app.onFoundDevice);
     },
     onFoundDevice: function(deviceInfo) {
-        app.displayStatus('Found Device: ' + deviceInfo.name + ' @ ' + deviceInfo.port);
+        app.displayStatus('Found Device: ' + deviceInfo.message.sender + ' @ ' + deviceInfo.port);
         var service = {
-            name: deviceInfo.name,
+            name: deviceInfo.message.sender,
             port: deviceInfo.port
         };
         console.log(JSON.stringify(arguments));
@@ -96,9 +96,10 @@ var app = {
         }
     },
     onJoinedSession: function(session) {
+        console.log(JSON.stringify(session));
         var deviceJoinedIndex = app.devicesToJoin[0];
         var device = app.devices[deviceJoinedIndex];
-        if (device.name === session.sessionHost) {
+        if (device.message.sender === session.sessionHost) {
             device.session = session;
             device.objectsToQuery = ['/'];
             device.session.introspect = function(onIntrospectionSuccess, objectPath) {
@@ -117,7 +118,7 @@ var app = {
         if (app.devicesToJoin.length > 0) {
             var nextDeviceToJoin = app.devicesToJoin[0];
             var service = {
-                name: app.devices[nextDeviceToJoin].name,
+                name: app.devices[nextDeviceToJoin].message.sender,
                 port: app.devices[nextDeviceToJoin].port
             };
             app.bus.joinSession(app.onJoinedSession, app.getFailureFor('bus.joinSession'), service);
@@ -244,7 +245,7 @@ var app = {
             var objectPath = device.objectsToQuery.pop();
             if (objectPath) {
                 device.session.introspect(function(xml) {
-                    var parsedXml = app.parseIntrospectionXml(xml[0], objectPath);
+                    var parsedXml = app.parseIntrospectionXml(xml.arguments[0], objectPath);
                     device.objectsToQuery = device.objectsToQuery.concat(parsedXml.childObjects);
                     var continueWithIntrospection = function() {
                         if (device.objectsToQuery.length > 0) {
